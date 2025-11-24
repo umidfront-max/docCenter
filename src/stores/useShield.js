@@ -4,7 +4,8 @@ import { ElMessage } from 'element-plus';
 
 const useShield = defineStore('shiled', {
    state: () => ({
-      shileds: []
+      shileds: [],
+      users: []
    }),
    actions: {
 
@@ -25,6 +26,16 @@ const useShield = defineStore('shiled', {
             })
             .catch((error) => {
                ElMessage.error(error)
+            })
+      },
+      getUsers() {
+         api({
+            url: '/api/doc-center/v1/admins/user',
+            method: 'GET',
+            params: { page: 0, size: 100 },
+         })
+            .then(({ data }) => {
+               this.users = data?.content || []
             })
       },
       getAdminShields(payload) {

@@ -1,19 +1,24 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import dayjs from 'dayjs'
 import useShield from '@/stores/useShield'
 import { ElMessage } from 'element-plus'
+import BaseFile from '@/components/BaseFile.vue'
+import useFile from '@/stores/useFile'
+import * as XLSX from 'xlsx'
 
 const shieldPinia = useShield()
+const filePinia = useFile()
 
 const today = dayjs().format('YYYY-MM-DD')
 
-// Bitta date picker → [start, end]
 const _data = ref({
   range: [today, today],
 })
 
 const form = ref({
+  file: null,
+  files: null,
   daytimeEmployeeCount: 0,
   nighttimeEmployeeCount: 0,
   searchCount: 0,
@@ -34,27 +39,8 @@ const loadShields = async () => {
       end: _data.value.range[1],
     },
     (data) => {
-      form.value = data || {}
-    },
-  )
-}
-
-const submitForm = () => {
-  shieldPinia.addShields(
-    {
-      ...form.value,
-    },
-    () => {
-      ElMessage.success('Yaratildi')
-      loadShields(
-        {
-          start: _data.value.range[0],
-          end: _data.value.range[1],
-        },
-        (data) => {
-          form.value = data
-        },
-      )
+      // ❗ formni bosib tashlamaslik
+      Object.assign(form.value, data || {})
     },
   )
 }
@@ -66,16 +52,66 @@ onMounted(() => {
       end: _data.value.range[1],
     },
     (data) => {
-      form.value = data
+       Object.assign(form.value, data || {})
+      form.value.file = form.value.files?.[0]
     },
   )
 })
+
+const submitForm = async () => {
+  // Avval fayl yuklaymiz
+  let fileString = null
+
+  if (form.value.file) {
+    try {
+      const res = await filePinia.addFile(form.value.file)
+      fileString = res?.file // API qaytaradigan value
+    } catch (err) {
+      return ElMessage.error('Fayl yuklashda xatolik')
+    }
+  }
+  // Endi addShields chaqiramiz
+  shieldPinia.addShields(
+    {
+      ...form.value,
+      files: [fileString],
+    },
+    () => {
+      ElMessage.success('Yaratildi')
+      loadShields()
+    },
+  )
+}
+
+const exportExcel = () => {
+  const start = _data.value.range[0]
+  const end = _data.value.range[1]
+  const fileName = `qalqon-${start}_${end}.xlsx`
+
+  const data = [
+    {
+      Qidiruv: form.value.searchCount,
+      "Bedarak yo'qolganlar": form.value.missingCount,
+      "Ma'muriy nazorat": form.value.adminCtrlCount,
+      "Tezkor-qidiruv e'lon qilinganlar": form.value.rapidWantedCount,
+      'Qidiruvdagi avtomashinalar': form.value.carWantedCount,
+      'Probatsiya buzganlar': form.value.probationCount,
+      'Issiq izdan jinoyatlar': form.value.hotTrailCount,
+      "Voyaga yetmagan yo'qolganlar": form.value.minorMissingCount,
+      'Yo‘qolgan buyum topilishi': form.value.itemFoundCount,
+    },
+  ]
+
+  const worksheet = XLSX.utils.json_to_sheet(data)
+  const workbook = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Hisobot')
+
+  XLSX.writeFile(workbook, fileName)
+}
 </script>
 <template>
   <div class="space-y-8">
     <h2 class="text-2xl mb-6! font-bold text-slate-700">Qalqon maʼlumotlari</h2>
-
-    <!-- Sana Range -->
     <el-form label-position="top" class="flex gap-5">
       <el-form-item label="Filter">
         <el-date-picker
@@ -94,7 +130,6 @@ onMounted(() => {
       </el-form-item>
     </el-form>
 
-    <!-- Asosiy Forma -->
     <el-form
       :model="form"
       label-position="top"
@@ -135,9 +170,15 @@ onMounted(() => {
       <el-form-item label="Yo‘qolgan buyum topilishi">
         <el-input v-model="form.itemFoundCount" type="number" placeholder="0" />
       </el-form-item>
+      <div>
+         <span class="text-sm text-black/60 inline-block mb-2!">Fayl</span>
+         <BaseFile v-model:model-value="form.file" />
+      </div>
     </el-form>
 
-    <div class="flex justify-end">
+    <div class="flex justify-end gap-3 my-5!">
+      <el-button type="success" size="large" @click="exportExcel"> Excel yuklash </el-button>
+
       <el-button type="primary" size="large" @click="submitForm"> Saqlash </el-button>
     </div>
   </div>

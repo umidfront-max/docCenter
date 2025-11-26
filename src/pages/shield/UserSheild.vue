@@ -19,17 +19,17 @@ const _data = ref({
 const form = ref({
   file: null,
   files: null,
-  daytimeEmployeeCount: 0,
-  nighttimeEmployeeCount: 0,
-  searchCount: 0,
-  missingCount: 0,
-  adminCtrlCount: 0,
-  rapidWantedCount: 0,
-  carWantedCount: 0,
-  probationCount: 0,
-  hotTrailCount: 0,
-  minorMissingCount: 0,
-  itemFoundCount: 0,
+  daytimeEmployeeCount: null,
+  nighttimeEmployeeCount: null,
+  searchCount: null,
+  missingCount: null,
+  adminCtrlCount: null,
+  rapidWantedCount: null,
+  carWantedCount: null,
+  probationCount: null,
+  hotTrailCount: null,
+  minorMissingCount: null,
+  itemFoundCount: null,
 })
 
 const loadShields = async () => {
@@ -136,39 +136,39 @@ const exportExcel = () => {
       class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-6"
     >
       <el-form-item label="Qidiruv">
-        <el-input v-model="form.searchCount" type="number" placeholder="0" />
+        <el-input v-model="form.searchCount" type="number"  />
       </el-form-item>
 
       <el-form-item label="Bedarak yo‘qolganlar">
-        <el-input v-model="form.missingCount" type="number" placeholder="0" />
+        <el-input v-model="form.missingCount" type="number"  />
       </el-form-item>
 
       <el-form-item label="Maʼmuriy nazorat">
-        <el-input v-model="form.adminCtrlCount" type="number" placeholder="0" />
+        <el-input v-model="form.adminCtrlCount" type="number"  />
       </el-form-item>
 
       <el-form-item label="Tezkor-qidiruv eʼlon qilinganlar">
-        <el-input v-model="form.rapidWantedCount" type="number" placeholder="0" />
+        <el-input v-model="form.rapidWantedCount" type="number"  />
       </el-form-item>
 
       <el-form-item label="Qidiruvdagi avtomashinalar">
-        <el-input v-model="form.carWantedCount" type="number" placeholder="0" />
+        <el-input v-model="form.carWantedCount" type="number"  />
       </el-form-item>
 
       <el-form-item label="Probatsiya cheklovidan buzg‘anlar">
-        <el-input v-model="form.probationCount" type="number" placeholder="0" />
+        <el-input v-model="form.probationCount" type="number"  />
       </el-form-item>
 
       <el-form-item label="“Issiq izdan” ochilgan jinoyatlar">
-        <el-input v-model="form.hotTrailCount" type="number" placeholder="0" />
+        <el-input v-model="form.hotTrailCount" type="number"  />
       </el-form-item>
 
       <el-form-item label="Voyaga yetmagan yo‘qolgan shaxslar">
-        <el-input v-model="form.minorMissingCount" type="number" placeholder="0" />
+        <el-input v-model="form.minorMissingCount" type="number"  />
       </el-form-item>
 
       <el-form-item label="Yo‘qolgan buyum topilishi">
-        <el-input v-model="form.itemFoundCount" type="number" placeholder="0" />
+        <el-input v-model="form.itemFoundCount" type="number"  />
       </el-form-item>
       <div>
          <span class="text-sm text-black/60 inline-block mb-2!">Fayl</span>

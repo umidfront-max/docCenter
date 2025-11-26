@@ -5,32 +5,41 @@ import useShield from '@/stores/useShield'
 import * as XLSX from 'xlsx'
 import { ElMessage } from 'element-plus'
 import useFile from '@/stores/useFile'
-const faylPinia = useFile()
 
 const shieldPinia = useShield()
+const faylPinia = useFile()
 
 const today = dayjs().format('YYYY-MM-DD')
 
-// Bitta date range-picker
+// Date Range State
 const _data = ref({
   range: [today, today],
 })
 
-// Backenddan malumot olish
+// Backend ma'lumotlarini yuklash
 const loadShields = async () => {
-  await shieldPinia.getUsers()
-  await shieldPinia.getAdminShields({
-    start: _data.value.range[0],
-    end: _data.value.range[1],
-  })
+  const [start, end] = _data.value.range
+
+  if (!start || !end) return
+
+  try {
+    await shieldPinia.getUsers()
+    await shieldPinia.getAdminShields({ start, end })
+  } catch (err) {
+    console.error(err)
+    ElMessage.error('Maʼlumotlarni yuklashda xatolik')
+  }
 }
 
-// Sana o‘zgarganda avtomatik reload
+// Sana o‘zgarsa avtomatik reload
 watch(
   () => _data.value.range,
-  () => {
-    loadShields()
+  (val) => {
+    if (val && val[0] && val[1]) {
+      loadShields()
+    }
   },
+  { deep: true }
 )
 
 // Excel eksport
@@ -39,7 +48,6 @@ const downloadExcel = () => {
     return ElMessage.warning("Ma'lumot mavjud emas")
   }
 
-  // Jadvaldan faqat kerak ustunlarni chiqaramiz
   const exportData = shieldPinia.shileds.map((item: any) => ({
     Foydalanuvchi: getUsername(item.userId),
     Qidiruv: item.searchCount,
@@ -55,19 +63,16 @@ const downloadExcel = () => {
 
   const ws = XLSX.utils.json_to_sheet(exportData)
   const wb = XLSX.utils.book_new()
-
   XLSX.utils.book_append_sheet(wb, ws, 'Qalqon')
 
   XLSX.writeFile(wb, "qalqon-ma'lumotlari.xlsx")
 }
 
+// Username olish
 const getUsername = (userId: string) => {
-  console.log('dd', userId)
-
   if (!userId) return '-'
-
   const user = shieldPinia.users?.find((u) => u.id === userId)
-  return user ? user.username : '-'
+  return user?.username || '-'
 }
 
 onMounted(() => {
@@ -77,6 +82,7 @@ onMounted(() => {
 
 <template>
   <div class="space-y-5">
+
     <!-- Sana tanlash -->
     <el-form class="flex justify-between items-end" label-position="top">
       <el-form-item class="w-80!" label="Filter">
@@ -91,13 +97,21 @@ onMounted(() => {
           unlink-panels
         />
       </el-form-item>
+
       <el-form-item>
-        <el-button type="success" @click="downloadExcel"> Excelga yuklab olish </el-button>
+        <el-button type="success" @click="downloadExcel">
+          Excelga yuklab olish
+        </el-button>
       </el-form-item>
     </el-form>
 
     <!-- Jadval -->
-    <el-table v-if="shieldPinia.shileds?.length" :data="shieldPinia.shileds" border class="mt-10">
+    <el-table
+      v-if="shieldPinia.shileds?.length"
+      :data="shieldPinia.shileds"
+      border
+      class="mt-10"
+    >
       <el-table-column
         width="140"
         label="Foydalanuvchi"
@@ -112,14 +126,16 @@ onMounted(() => {
       <el-table-column width="140" prop="hotTrailCount" label="Issiq izdan" />
       <el-table-column width="120" prop="minorMissingCount" label="Voyaga yetmaganlar" />
       <el-table-column width="120" prop="itemFoundCount" label="Topilgan buyumlar" />
-      <el-table-column width="140" prop="files" label="Faylni yuklash">
+
+      <el-table-column width="160" label="Faylni yuklash">
         <template #default="{ row }">
           <span
-            class="text-blue-600! cursor-pointer"
-            v-if="row.files[0]"
+            class="text-blue-600 cursor-pointer"
+            v-if="Array.isArray(row.files) && row.files.length > 0 && row.files[0]"
             @click="faylPinia.downloadFile(row.files[0])"
-            >{{ row.files?.[0]?.slice(-15) }}</span
           >
+            {{ row.files[0].slice(-20) }}
+          </span>
           <span v-else>-</span>
         </template>
       </el-table-column>
